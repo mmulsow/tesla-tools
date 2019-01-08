@@ -7,6 +7,9 @@ import time
 import yaml
 
 
+API_HOST = 'owner-api.teslamotors.com'
+
+
 class TeslaAPIError(Exception):
     pass
 
@@ -32,12 +35,13 @@ class TeslaAPI:
                     headers['Authorization'] = 'Bearer ' + self.access_token
 
                 if self._conn is None:
-                    self._conn = http.client.HTTPSConnection('owner-api.teslamotors.com')
+                    self._conn = http.client.HTTPSConnection(API_HOST)
                 self._conn.request('POST', url, body, headers)
 
                 res = self._conn.getresponse()
                 if res.status != 200:
-                    raise TeslaAPIError('Error %s: %r' % (res.status, res.read()))
+                    raise TeslaAPIError('Error %s: %r' %
+                                        (res.status, res.read()))
 
                 ret = json.load(res)
                 break
@@ -60,12 +64,13 @@ class TeslaAPI:
                 }
 
                 if self._conn is None:
-                    self._conn = http.client.HTTPSConnection('owner-api.teslamotors.com')
+                    self._conn = http.client.HTTPSConnection(API_HOST)
                 self._conn.request('GET', url, headers=headers)
 
                 res = self._conn.getresponse()
                 if res.status != 200:
-                    raise TeslaAPIError('Error %s: %r' % (res.status, res.read()))
+                    raise TeslaAPIError('Error %s: %r' %
+                                        (res.status, res.read()))
 
                 ret = json.load(res)['response']
                 break
@@ -157,14 +162,16 @@ def main():
                     print(time.ctime(), 'Charging at home to %s%%' %
                           (charge_state['charge_limit_soc'],))
                     if charge_state['charge_limit_soc'] != home_target:
-                        print(time.ctime() + ' Changing charge target from %s to %s at home.' %
+                        print(time.ctime(),
+                              'Changing charge target from %s to %s at home.' %
                               (charge_state['charge_limit_soc'], home_target))
                         t.set_charge_limit(vehicle_id, home_target)
                 else:
                     print(time.ctime(), 'Charging %s km from home to %s%%' %
                           (distance, charge_state['charge_limit_soc']))
                     if charge_state['charge_limit_soc'] != away_target:
-                        print(time.ctime(), 'Changing charge target from %s to %s for away.' %
+                        print(time.ctime(),
+                              'Changing target from %s to %s for away.' %
                               (charge_state['charge_limit_soc'], away_target))
                         t.set_charge_limit(vehicle_id, away_target)
             else:
