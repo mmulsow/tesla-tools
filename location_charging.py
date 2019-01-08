@@ -75,7 +75,7 @@ class TeslaAPI:
                 ret = json.load(res)['response']
                 break
             except Exception as e:
-                if i == 2:
+                if isinstance(e, TeslaAPIError) or i == 2:
                     raise
 
                 print(time.ctime(), 'Error "%s". trying again...' % (e,))
@@ -150,7 +150,13 @@ def main():
             away_target = config['users'][user]['targets']['away']
             vehicle_id = config['users'][user]['vehicle_id']
 
-            charge_state = t.charge_state(vehicle_id)
+            try:
+                charge_state = t.charge_state(vehicle_id)
+            except TeslaAPIError as e:
+                if 'vehicle unavailable' in str(e):
+                    print(time.ctime(), 'Vehichle unavailable')
+                    continue
+
             if charge_state['charging_state'] in ['Charging', 'Complete']:
                 if changed[user]:
                     continue
