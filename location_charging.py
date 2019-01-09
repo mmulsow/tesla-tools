@@ -153,9 +153,8 @@ def main():
             try:
                 charge_state = t.charge_state(vehicle_id)
             except TeslaAPIError as e:
-                if 'vehicle unavailable' in str(e):
-                    print(time.ctime(), 'Vehichle unavailable')
-                    continue
+                print(time.ctime(), 'API Error:', e)
+                continue
 
             if charge_state['charging_state'] in ['Charging', 'Complete']:
                 if changed[user]:
@@ -165,8 +164,8 @@ def main():
                 drive_state = t.drive_state(vehicle_id)
                 distance = calc_dist(home, drive_state)
                 if distance < 0.1:
-                    print(time.ctime(), 'Charging at home to %s%%' %
-                          (charge_state['charge_limit_soc'],))
+                    print(time.ctime(), 'Charging at home (%s km) to %s%%' %
+                          (distance, charge_state['charge_limit_soc'],))
                     if charge_state['charge_limit_soc'] != home_target:
                         print(time.ctime(),
                               'Changing charge target from %s to %s at home.' %
