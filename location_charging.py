@@ -140,7 +140,10 @@ def main():
     for user in config['users']:
         changed[user] = False
 
+    fp = open('charge_level.csv', 'w')
+
     while True:
+        data = []
         for user in config['users']:
             print(time.ctime(), 'Checking for user', user)
 
@@ -155,6 +158,14 @@ def main():
             except TeslaAPIError as e:
                 print(time.ctime(), 'API Error:', e)
                 continue
+
+            data.extend([
+                    user,
+                    str(charge_state['battery_level']),
+                    str(charge_state['battery_range']),
+                    str(charge_state['charge_limit_soc']),
+                ]
+            )
 
             if charge_state['charging_state'] in ['Charging', 'Complete']:
                 if changed[user]:
@@ -183,6 +194,8 @@ def main():
                 print(time.ctime(), 'Not charging')
                 changed[user] = False
 
+        fp.write(time.ctime() + ',' + ','.join(data) + '\n')
+        fp.flush()
         time.sleep(60)
 
 
