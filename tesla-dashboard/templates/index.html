@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title>Main - Tesla Dashboard</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+ </head>
+ <body>
+  {% if request.form.get('error'): %}
+  <div class="error">
+    <p>{{ request.form['error'] }}</p>
+  </div>
+  {% endif %}
+  <div class="table-box">
+   <h2>Vehicles</h2>
+   {% if user.vehicles: %}
+   <table>
+    <thead>
+     <tr>
+      <th>Name</th>
+      <th>VIN</th>
+      <th>Home Target</th>
+      <th>Away Target</th>
+      <th>Home Latitude</th>
+      <th>Home Longitude</th>
+     </tr>
+    </thead>
+    <tbody>
+     {% for vehicle in user.vehicles: %}
+     <tr>
+      <td>{{ vehicle.name }}</td>
+      <td>{{ vehicle.vin }}</td>
+      <td>{{ vehicle.home_target }}%</td>
+      <td>{{ vehicle.away_target }}%</td>
+      <td>{{ vehicle.home_lat }}</td>
+      <td>{{ vehicle.home_lon }}</td>
+     </tr>
+     {% endfor %}
+    </tbody>
+   </table>
+   {% else: %}
+   <p>Not tracking any vehicles yet. Add one below.</p>
+   {% endif %}
+  </div>
+  <div class="form-box">
+   <h2>Add or Update a Vehicle</h2>
+   <form action="/vehicles" method="post">
+    <label for="vehicle">Vehicle:</label>
+    <select name="vehicle" id="vehicle">
+     {% for vehicle in vehicles: %}
+     <option value="{{ vehicle.id }}">{{ vehicle.display_name }} - {{ vehicle.vin }}</option>
+     {% endfor %}
+    </select>
+    <label for="home_target">Home Target:</label>
+    <input type="text" name="home_target" id="home_target" value="80%" />
+    <label for="away_target">Away Target:</label>
+    <input type="text" name="away_target" id="away_target" value="90%" />
+    <label for="home_address">Home Address:</label>
+    <input type="text" name="home_address" id="home_address" />
+    <input type="submit" value="Add/Update" />
+   </form>
+  </div>
+ </body>
+</html>
