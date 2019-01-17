@@ -1,3 +1,4 @@
+import threading
 import json
 
 from flask import Flask, session, render_template, redirect, request
@@ -5,6 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from geopy.geocoders import Nominatim
 
 from tesla_api import TeslaAPI, TeslaAPIError
+from worker import update_charge_worker
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////var/lib/tesla/tesla.db'
@@ -35,6 +37,9 @@ class Vehicle(db.Model):
 
 db.create_all()
 
+worker = threading.Thread(target=update_charge_worker, args=(User,))
+worker.start()
+
 
 @app.route("/")
 def dashboard():
@@ -50,23 +55,30 @@ def dashboard():
 def login():
     if 'email' in request.form:
         try:
-            cred = TeslaAPI().auth(request.form['email'], request.form.get('password'))
+            cred = TeslaAPI().auth(
+                request.form['email'],
+                request.form.get('password')
+            )
             session['email'] = request.form['email']
 
             user = User.query.filter_by(email=request.form['email']).first()
             if user:
                 user.access_token = cred['access_token']
             else:
-                user = User(email=request.form['email'], access_token=cred['access_token'])
+                user = User(
+                    email=request.form['email'],
+                    access_token=cred['access_token']
+                )
                 db.session.add(user)
 
             db.session.commit()
 
             return redirect('/')
         except TeslaAPIError:
-            return render_template('login.html', error='Incorrect email or password')
+            return render_template('login.html', error='Invalid credentials')
 
     return render_template('login.html')
+
 
 @app.route('/vehicles', methods=['POST'])
 def vehicles():
@@ -74,7 +86,7 @@ def vehicles():
     location = geolocator.geocode(request.form['home_address'])
     user = User.query.filter_by(email=session['email']).first()
     vehicle_id = int(request.form['vehicle'])
-    vehicles = dict((v['id'], v) for v in TeslaAPI(user.access_token).vehicles())
+    vehicles = {(v['id'], v) for v in TeslaAPI(user.access_token).vehicles()}
 
     if vehicle_id not in vehicles:
         print(request.form['vehicle'], vehicles)
@@ -82,12 +94,12 @@ def vehicles():
 
     for vehicle in user.vehicles:
         if vehicle.id == vehicle_id:
-            vehicle.name=vehicles[vehicle_id]['display_name']
-            vehicle.vin=vehicles[vehicle_id]['vin']
-            vehicle.home_target=int(request.form['home_target'].strip().strip('%'))
-            vehicle.away_target=int(request.form['away_target'].strip().strip('%'))
-            vehicle.home_lat=location.latitude
-            vehicle.home_lon=location.longitude
+            vehicle.name = vehicles[vehicle_id]['display_name']
+            vehicle.vin = vehicles[vehicle_id]['vin']
+            vehicle.home_target = int(request.form['home_target'].strip('%'))
+            vehicle.away_target = int(request.form['away_target'].strip('%'))
+            vehicle.home_lat = location.latitude
+            vehicle.home_lon = location.longitude
             db.session.commit()
             return redirect('/?message=Vehicle+updated')
 
