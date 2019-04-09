@@ -83,10 +83,13 @@ def login():
 @app.route('/vehicles', methods=['POST'])
 def vehicles():
     geolocator = Nominatim(user_agent="python3/tesla_dashboard")
-    location = geolocator.geocode(request.form['home_address'])
+    if 'home_address' in request.form:
+        location = geolocator.geocode(request.form['home_address'])
+    else:
+        location = None
     user = User.query.filter_by(email=session['email']).first()
     vehicle_id = int(request.form['vehicle'])
-    vehicles = {(v['id'], v) for v in TeslaAPI(user.access_token).vehicles()}
+    vehicles = dict((v['id'], v) for v in TeslaAPI(user.access_token).vehicles())
 
     if vehicle_id not in vehicles:
         print(request.form['vehicle'], vehicles)
@@ -98,10 +101,14 @@ def vehicles():
             vehicle.vin = vehicles[vehicle_id]['vin']
             vehicle.home_target = int(request.form['home_target'].strip('%'))
             vehicle.away_target = int(request.form['away_target'].strip('%'))
-            vehicle.home_lat = location.latitude
-            vehicle.home_lon = location.longitude
+            if location:
+                vehicle.home_lat = location.latitude
+                vehicle.home_lon = location.longitude
             db.session.commit()
             return redirect('/?message=Vehicle+updated')
+
+    if not location:
+        return redirect('/?message=Please+specify+home+address')
 
     vehicle = Vehicle(
         id=request.form['vehicle'],
