@@ -9,7 +9,7 @@ setup(
     install_requires=[
         'flask',
         'flask_sqlalchemy',
-        'geocoder',
+        'geopy',
         'pyyaml',
     ],
 )

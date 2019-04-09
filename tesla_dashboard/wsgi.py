@@ -4,7 +4,7 @@ from flask import Flask, session, render_template, redirect, request
 from flask_sqlalchemy import SQLAlchemy
 from geopy.geocoders import Nominatim
 
-from tesla_api import TeslaAPI, TeslaAPIError
+from .tesla_api import TeslaAPI, TeslaAPIError
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////var/lib/tesla/tesla.db'
