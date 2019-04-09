@@ -1,4 +1,3 @@
-import threading
 import json
 
 from flask import Flask, session, render_template, redirect, request
@@ -6,7 +5,6 @@ from flask_sqlalchemy import SQLAlchemy
 from geopy.geocoders import Nominatim
 
 from tesla_api import TeslaAPI, TeslaAPIError
-from worker import update_charge_worker
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////var/lib/tesla/tesla.db'
@@ -36,9 +34,6 @@ class Vehicle(db.Model):
 
 
 db.create_all()
-
-worker = threading.Thread(target=update_charge_worker, args=(User,))
-worker.start()
 
 
 @app.route("/")
