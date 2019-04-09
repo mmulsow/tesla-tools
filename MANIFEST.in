@@ -1,0 +1,3 @@
+graft tesla_dashboard/static
+graft tesla_dashboard/templates
+global-exclude *.pyc
